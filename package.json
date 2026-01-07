@@ -2,19 +2,60 @@
   "name": "domharvest-playwright",
   "version": "1.0.0",
   "description": "DOM harvesting tool using Playwright",
-  "main": "index.js",
+  "main": "src/harvester.js",
   "type": "module",
+  "exports": {
+    ".": {
+      "import": "./src/harvester.js"
+    }
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE.md",
+    "CHANGELOG.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/domharvest/domharvest-playwright.git"
+  },
+  "bugs": {
+    "url": "https://github.com/domharvest/domharvest-playwright/issues"
+  },
+  "homepage": "https://domharvest.github.io/domharvest-playwright/",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "test": "standard && node --test",
     "lint": "standard",
     "lint:fix": "standard --fix",
-    "playwright:install": "playwright install"
+    "playwright:install": "playwright install",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs",
+    "release": "standard-version",
+    "release:minor": "standard-version --release-as minor",
+    "release:major": "standard-version --release-as major",
+    "release:patch": "standard-version --release-as patch"
   },
-  "keywords": ["playwright", "scraper", "dom", "harvest"],
+  "keywords": [
+    "playwright",
+    "scraper",
+    "dom",
+    "harvest"
+  ],
   "author": "Massimiliano Bertinetti <max.yterb@gmail.com>",
   "license": "MIT",
+  "dependencies": {
+    "playwright": "^1.57.0"
+  },
   "devDependencies": {
-    "playwright": "^1.57.0",
-    "standard": "^17.1.2"
+    "standard": "^17.1.2",
+    "standard-version": "^9.5.0",
+    "vitepress": "^1.6.4"
+  },
+  "peerDependencies": {
+    "playwright": "^1.57.0"
   }
 }

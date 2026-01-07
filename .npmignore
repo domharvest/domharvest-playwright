@@ -1,0 +1,39 @@
+# Development files
+.github/
+.vscode/
+.idea/
+.claude/
+
+# Documentation source (published version is on GitHub Pages)
+docs/
+
+# Tests and examples
+tests/
+examples/
+
+# Config files
+.versionrc.json
+.gitignore
+.npmignore
+
+# Development dependencies
+node_modules/
+
+# Build artifacts
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.local
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
