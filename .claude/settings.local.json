@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(npm run playwright:install:*)",
+      "Bash(npm run lint)",
+      "Bash(npm test:*)",
+      "Bash(node:*)",
+      "Bash(tree:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}

@@ -19,8 +19,73 @@ npm run playwright:install
 
 ## Usage
 
+### Quick Start
+
 ```javascript
-// Coming soon
+import { harvest } from './src/harvester.js'
+
+// Extract all paragraphs from a page
+const paragraphs = await harvest(
+  'https://example.com',
+  'p',
+  (el) => ({ text: el.textContent?.trim() })
+)
+
+console.log(paragraphs)
+```
+
+### Using DOMHarvester Class
+
+```javascript
+import { DOMHarvester } from './src/harvester.js'
+
+const harvester = new DOMHarvester({ headless: true })
+
+try {
+  await harvester.init()
+
+  // Extract links
+  const links = await harvester.harvest(
+    'https://example.com',
+    'a',
+    (el) => ({
+      text: el.textContent?.trim(),
+      href: el.href
+    })
+  )
+
+  console.log(links)
+} finally {
+  await harvester.close()
+}
+```
+
+### Custom Extraction
+
+```javascript
+import { DOMHarvester } from './src/harvester.js'
+
+const harvester = new DOMHarvester()
+await harvester.init()
+
+const pageData = await harvester.harvestCustom(
+  'https://example.com',
+  () => {
+    return {
+      title: document.title,
+      headings: Array.from(document.querySelectorAll('h1, h2')).map(h => h.textContent),
+      linkCount: document.querySelectorAll('a').length
+    }
+  }
+)
+
+await harvester.close()
+```
+
+### Run Examples
+
+```bash
+node examples/basic-example.js
 ```
 
 ## Development
@@ -53,7 +118,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Author
 
-Your Name
+Massimiliano Bertinetti
 
 ## Support
 
