@@ -1,6 +1,6 @@
 {
   "name": "domharvest-playwright",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "DOM harvesting tool using Playwright",
   "main": "src/harvester.js",
   "type": "module",
