@@ -193,7 +193,7 @@ npm deprecate domharvest-playwright@1.0.1 "Version deprecated, use 1.0.0"
 ### GitHub Pages
 
 1. Go to repository Settings → Pages
-2. Set Source to "GitHub Actions"
-3. Save
+2. Under "Build and deployment", set Source to "GitHub Actions"
+   (The setting is saved automatically when you select it)
 
 The next push to `main` will deploy the documentation.
