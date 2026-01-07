@@ -1,0 +1,20 @@
+{
+  "name": "domharvest-playwright",
+  "version": "1.0.0",
+  "description": "DOM harvesting tool using Playwright",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "standard && node --test",
+    "lint": "standard",
+    "lint:fix": "standard --fix",
+    "playwright:install": "playwright install"
+  },
+  "keywords": ["playwright", "scraper", "dom", "harvest"],
+  "author": "Massimiliano Bertinetti <max.yterb@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "playwright": "^1.57.0",
+    "standard": "^17.1.2"
+  }
+}
