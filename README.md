@@ -36,14 +36,18 @@ npx playwright install
 ```javascript
 import { harvest } from 'domharvest-playwright'
 
-// Extract all paragraphs from a page
-const paragraphs = await harvest(
-  'https://example.com',
-  'p',
-  (el) => ({ text: el.textContent?.trim() })
+// Extract quotes from quotes.toscrape.com (a site designed for scraping practice)
+const quotes = await harvest(
+  'https://quotes.toscrape.com/',
+  '.quote',
+  (el) => ({
+    text: el.querySelector('.text')?.textContent?.trim(),
+    author: el.querySelector('.author')?.textContent?.trim(),
+    tags: Array.from(el.querySelectorAll('.tag')).map(tag => tag.textContent?.trim())
+  })
 )
 
-console.log(paragraphs)
+console.log(quotes)
 ```
 
 ### Using DOMHarvester Class
@@ -56,17 +60,19 @@ const harvester = new DOMHarvester({ headless: true })
 try {
   await harvester.init()
 
-  // Extract links
-  const links = await harvester.harvest(
-    'https://example.com',
-    'a',
+  // Extract books from books.toscrape.com (a practice scraping site)
+  const books = await harvester.harvest(
+    'https://books.toscrape.com/',
+    '.product_pod',
     (el) => ({
-      text: el.textContent?.trim(),
-      href: el.href
+      title: el.querySelector('h3 a')?.getAttribute('title'),
+      price: el.querySelector('.price_color')?.textContent?.trim(),
+      availability: el.querySelector('.availability')?.textContent?.trim(),
+      rating: el.querySelector('.star-rating')?.className.split(' ')[1]
     })
   )
 
-  console.log(links)
+  console.log(books)
 } finally {
   await harvester.close()
 }
@@ -81,12 +87,19 @@ const harvester = new DOMHarvester()
 await harvester.init()
 
 const pageData = await harvester.harvestCustom(
-  'https://example.com',
+  'https://quotes.toscrape.com/',
   () => {
     return {
       title: document.title,
-      headings: Array.from(document.querySelectorAll('h1, h2')).map(h => h.textContent),
-      linkCount: document.querySelectorAll('a').length
+      totalQuotes: document.querySelectorAll('.quote').length,
+      authors: Array.from(new Set(
+        Array.from(document.querySelectorAll('.author'))
+          .map(a => a.textContent?.trim())
+      )),
+      allTags: Array.from(new Set(
+        Array.from(document.querySelectorAll('.tag'))
+          .map(t => t.textContent?.trim())
+      ))
     }
   }
 )

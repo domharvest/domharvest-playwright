@@ -1,28 +1,28 @@
 # Examples
 
-Practical examples for common web scraping scenarios.
+Practical examples for common web scraping scenarios using real practice websites.
 
-## Extract Article Titles and Links
+## Extract Quotes with Authors and Tags
 
 ```javascript
 import { harvest } from 'domharvest-playwright'
 
-const articles = await harvest(
-  'https://blog.example.com',
-  'article',
+// Extract quotes from quotes.toscrape.com (a site designed for scraping practice)
+const quotes = await harvest(
+  'https://quotes.toscrape.com/',
+  '.quote',
   (el) => ({
-    title: el.querySelector('h2')?.textContent?.trim(),
-    link: el.querySelector('a')?.href,
-    excerpt: el.querySelector('.excerpt')?.textContent?.trim(),
+    text: el.querySelector('.text')?.textContent?.trim(),
     author: el.querySelector('.author')?.textContent?.trim(),
-    date: el.querySelector('time')?.getAttribute('datetime')
+    tags: Array.from(el.querySelectorAll('.tag')).map(tag => tag.textContent?.trim())
   })
 )
 
-console.log(articles)
+console.log(quotes)
+// Output: Array of 10 quotes with authors and tags
 ```
 
-## Scrape Product Information
+## Scrape Book Information
 
 ```javascript
 import { DOMHarvester } from 'domharvest-playwright'
@@ -30,56 +30,24 @@ import { DOMHarvester } from 'domharvest-playwright'
 const harvester = new DOMHarvester({ headless: true })
 await harvester.init()
 
-const products = await harvester.harvest(
-  'https://shop.example.com/products',
-  '.product-card',
+const books = await harvester.harvest(
+  'https://books.toscrape.com/',
+  '.product_pod',
   (el) => ({
-    name: el.querySelector('.product-name')?.textContent?.trim(),
-    price: parseFloat(
-      el.querySelector('.price')?.textContent?.replace(/[^0-9.]/g, '') || '0'
-    ),
-    image: el.querySelector('img')?.src,
-    rating: parseFloat(el.querySelector('.rating')?.textContent || '0'),
-    inStock: !el.querySelector('.out-of-stock')
+    title: el.querySelector('h3 a')?.getAttribute('title'),
+    price: el.querySelector('.price_color')?.textContent?.trim(),
+    availability: el.querySelector('.availability')?.textContent?.trim(),
+    rating: el.querySelector('.star-rating')?.className.split(' ')[1],
+    image: el.querySelector('img')?.src
   })
 )
 
 await harvester.close()
-console.log(products)
+console.log(books)
+// Output: Array of 20 books with details
 ```
 
-## Monitor Website Changes
-
-```javascript
-import { DOMHarvester } from 'domharvest-playwright'
-
-async function checkForChanges (url, selector) {
-  const harvester = new DOMHarvester()
-  await harvester.init()
-
-  try {
-    const currentContent = await harvester.harvestCustom(url, () => {
-      const el = document.querySelector(selector)
-      return el ? el.textContent?.trim() : null
-    })
-
-    return currentContent
-  } finally {
-    await harvester.close()
-  }
-}
-
-// Check every 5 minutes
-setInterval(async () => {
-  const content = await checkForChanges(
-    'https://example.com',
-    '#important-section'
-  )
-  console.log('Current content:', content)
-}, 5 * 60 * 1000)
-```
-
-## Extract Structured Data
+## Extract Page Metadata
 
 ```javascript
 import { DOMHarvester } from 'domharvest-playwright'
@@ -87,26 +55,27 @@ import { DOMHarvester } from 'domharvest-playwright'
 const harvester = new DOMHarvester()
 await harvester.init()
 
-const structuredData = await harvester.harvestCustom(
-  'https://example.com',
+const pageData = await harvester.harvestCustom(
+  'https://quotes.toscrape.com/',
   () => {
-    // Extract JSON-LD structured data
-    const scripts = Array.from(
-      document.querySelectorAll('script[type="application/ld+json"]')
-    )
-
-    return scripts.map(script => {
-      try {
-        return JSON.parse(script.textContent || '{}')
-      } catch {
-        return null
-      }
-    }).filter(Boolean)
+    return {
+      title: document.title,
+      totalQuotes: document.querySelectorAll('.quote').length,
+      authors: Array.from(new Set(
+        Array.from(document.querySelectorAll('.author'))
+          .map(a => a.textContent?.trim())
+      )),
+      allTags: Array.from(new Set(
+        Array.from(document.querySelectorAll('.tag'))
+          .map(t => t.textContent?.trim())
+      )),
+      hasNextPage: document.querySelector('.next') !== null
+    }
   }
 )
 
 await harvester.close()
-console.log(structuredData)
+console.log(pageData)
 ```
 
 ## Scrape Paginated Content
@@ -114,26 +83,26 @@ console.log(structuredData)
 ```javascript
 import { DOMHarvester } from 'domharvest-playwright'
 
-async function scrapePaginatedContent (baseUrl, maxPages = 5) {
+async function scrapeMultiplePages (maxPages = 3) {
   const harvester = new DOMHarvester()
   await harvester.init()
 
-  const allData = []
+  const allQuotes = []
 
   try {
     for (let page = 1; page <= maxPages; page++) {
-      const url = `${baseUrl}?page=${page}`
       console.log(`Scraping page ${page}...`)
 
-      const pageData = await harvester.harvest(
-        url,
-        '.item',
+      const quotes = await harvester.harvest(
+        `https://quotes.toscrape.com/page/${page}/`,
+        '.quote',
         (el) => ({
-          title: el.querySelector('h3')?.textContent?.trim()
+          text: el.querySelector('.text')?.textContent?.trim(),
+          author: el.querySelector('.author')?.textContent?.trim()
         })
       )
 
-      allData.push(...pageData)
+      allQuotes.push(...quotes)
 
       // Be nice to the server
       await new Promise(resolve => setTimeout(resolve, 1000))
@@ -142,11 +111,46 @@ async function scrapePaginatedContent (baseUrl, maxPages = 5) {
     await harvester.close()
   }
 
-  return allData
+  return allQuotes
 }
 
-const data = await scrapePaginatedContent('https://example.com/items', 3)
-console.log(`Scraped ${data.length} items`)
+const quotes = await scrapeMultiplePages(3)
+console.log(`Total quotes: ${quotes.length}`)
+// Output: 30 quotes from 3 pages
+```
+
+## Filter and Transform Data
+
+```javascript
+import { DOMHarvester } from 'domharvest-playwright'
+
+const harvester = new DOMHarvester()
+await harvester.init()
+
+const books = await harvester.harvest(
+  'https://books.toscrape.com/',
+  '.product_pod',
+  (el) => ({
+    title: el.querySelector('h3 a')?.getAttribute('title'),
+    price: parseFloat(
+      el.querySelector('.price_color')?.textContent?.replace(/[^0-9.]/g, '') || '0'
+    ),
+    rating: el.querySelector('.star-rating')?.className.split(' ')[1],
+    inStock: el.querySelector('.availability')?.textContent?.includes('In stock')
+  })
+)
+
+// Filter only books in stock with 4+ star rating
+const topBooks = books.filter(book =>
+  book.inStock &&
+  ['Four', 'Five'].includes(book.rating)
+)
+
+// Sort by price (descending)
+topBooks.sort((a, b) => b.price - a.price)
+
+await harvester.close()
+console.log('Top rated books in stock:', topBooks)
 ```
 
 ## Extract Table Data
@@ -158,32 +162,60 @@ const harvester = new DOMHarvester()
 await harvester.init()
 
 const tableData = await harvester.harvestCustom(
-  'https://example.com/table',
+  'https://quotes.toscrape.com/tableful/',
   () => {
-    const table = document.querySelector('table')
-    if (!table) return []
+    const rows = Array.from(document.querySelectorAll('.table-responsive table tbody tr'))
 
-    const headers = Array.from(table.querySelectorAll('th')).map(
-      th => th.textContent?.trim()
-    )
-
-    const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr => {
-      const cells = Array.from(tr.querySelectorAll('td')).map(
-        td => td.textContent?.trim()
-      )
-
-      return headers.reduce((obj, header, index) => {
-        obj[header] = cells[index]
-        return obj
-      }, {})
+    return rows.map(tr => {
+      const cells = Array.from(tr.querySelectorAll('td'))
+      return {
+        quote: cells[0]?.textContent?.trim(),
+        author: cells[1]?.textContent?.trim(),
+        tags: cells[2]?.textContent?.trim()
+      }
     })
-
-    return rows
   }
 )
 
 await harvester.close()
 console.log(tableData)
+```
+
+## Extract with Wait Conditions
+
+```javascript
+import { DOMHarvester } from 'domharvest-playwright'
+
+const harvester = new DOMHarvester({ headless: true })
+await harvester.init()
+
+try {
+  // Navigate to page
+  await harvester.page.goto('https://quotes.toscrape.com/scroll')
+
+  // Wait for specific content to load
+  await harvester.page.waitForSelector('.quote', { timeout: 5000 })
+
+  // Scroll to load more content
+  await harvester.page.evaluate(() => {
+    window.scrollTo(0, document.body.scrollHeight)
+  })
+
+  // Wait a bit for new content
+  await new Promise(resolve => setTimeout(resolve, 2000))
+
+  // Extract all quotes
+  const quotes = await harvester.page.$$eval('.quote', quotes =>
+    quotes.map(quote => ({
+      text: quote.querySelector('.text')?.textContent?.trim(),
+      author: quote.querySelector('.author')?.textContent?.trim()
+    }))
+  )
+
+  console.log(`Extracted ${quotes.length} quotes`)
+} finally {
+  await harvester.close()
+}
 ```
 
 ## Save to File
@@ -192,22 +224,33 @@ console.log(tableData)
 import { harvest } from 'domharvest-playwright'
 import { writeFile } from 'fs/promises'
 
-const data = await harvest(
-  'https://example.com',
-  '.news-item',
+const quotes = await harvest(
+  'https://quotes.toscrape.com/',
+  '.quote',
   (el) => ({
-    headline: el.querySelector('h2')?.textContent?.trim(),
+    text: el.querySelector('.text')?.textContent?.trim(),
+    author: el.querySelector('.author')?.textContent?.trim(),
+    tags: Array.from(el.querySelectorAll('.tag')).map(tag => tag.textContent?.trim()),
     timestamp: new Date().toISOString()
   })
 )
 
+// Save as JSON
 await writeFile(
-  'scraped-data.json',
-  JSON.stringify(data, null, 2),
+  'quotes.json',
+  JSON.stringify(quotes, null, 2),
   'utf-8'
 )
 
-console.log('Data saved to scraped-data.json')
+// Save as CSV
+const csv = [
+  'text,author,tags',
+  ...quotes.map(q => `"${q.text}","${q.author}","${q.tags.join('; ')}"`)
+].join('\n')
+
+await writeFile('quotes.csv', csv, 'utf-8')
+
+console.log(`Saved ${quotes.length} quotes to files`)
 ```
 
 ## Run Examples
@@ -218,8 +261,18 @@ All these examples and more are available in the repository:
 git clone https://github.com/domharvest/domharvest-playwright.git
 cd domharvest-playwright
 npm install
+npm run playwright:install
 node examples/basic-example.js
 ```
+
+## Practice Websites
+
+These examples use the following practice websites that are specifically designed for web scraping:
+
+- **quotes.toscrape.com** - Quote collection with pagination, tags, and various layouts
+- **books.toscrape.com** - Fictional bookstore with products, ratings, and categories
+
+These sites are perfect for learning and testing scraping techniques without violating any Terms of Service.
 
 ## Next Steps
 
