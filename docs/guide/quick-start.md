@@ -9,16 +9,18 @@ For quick, one-time scraping tasks, use the `harvest` function:
 ```javascript
 import { harvest } from 'domharvest-playwright'
 
-const links = await harvest(
-  'https://news.ycombinator.com',
-  'a.titlelink',
+// Extract quotes from quotes.toscrape.com (a site designed for scraping practice)
+const quotes = await harvest(
+  'https://quotes.toscrape.com/',
+  '.quote',
   (el) => ({
-    title: el.textContent?.trim(),
-    url: el.href
+    text: el.querySelector('.text')?.textContent?.trim(),
+    author: el.querySelector('.author')?.textContent?.trim(),
+    tags: Array.from(el.querySelectorAll('.tag')).map(tag => tag.textContent?.trim())
   })
 )
 
-console.log(links)
+console.log(quotes)
 ```
 
 ## Reusable Harvester Instance
@@ -33,20 +35,19 @@ const harvester = new DOMHarvester({ headless: true })
 try {
   await harvester.init()
 
-  // Scrape multiple pages
-  const page1Data = await harvester.harvest(
-    'https://example.com/page1',
-    '.article',
-    (el) => ({ title: el.querySelector('h2')?.textContent })
+  // Extract books from books.toscrape.com (a practice scraping site)
+  const books = await harvester.harvest(
+    'https://books.toscrape.com/',
+    '.product_pod',
+    (el) => ({
+      title: el.querySelector('h3 a')?.getAttribute('title'),
+      price: el.querySelector('.price_color')?.textContent?.trim(),
+      availability: el.querySelector('.availability')?.textContent?.trim(),
+      rating: el.querySelector('.star-rating')?.className.split(' ')[1]
+    })
   )
 
-  const page2Data = await harvester.harvest(
-    'https://example.com/page2',
-    '.product',
-    (el) => ({ name: el.querySelector('.name')?.textContent })
-  )
-
-  console.log({ page1Data, page2Data })
+  console.log(books)
 } finally {
   await harvester.close()
 }
@@ -62,31 +63,28 @@ import { DOMHarvester } from 'domharvest-playwright'
 const harvester = new DOMHarvester()
 await harvester.init()
 
-const pageInfo = await harvester.harvestCustom(
-  'https://example.com',
+const pageData = await harvester.harvestCustom(
+  'https://quotes.toscrape.com/',
   () => {
     // This runs in the browser context
     return {
       title: document.title,
-      meta: {
-        description: document.querySelector('meta[name="description"]')?.content,
-        keywords: document.querySelector('meta[name="keywords"]')?.content
-      },
-      stats: {
-        images: document.querySelectorAll('img').length,
-        links: document.querySelectorAll('a').length,
-        paragraphs: document.querySelectorAll('p').length
-      },
-      headings: Array.from(document.querySelectorAll('h1, h2, h3')).map(h => ({
-        level: h.tagName.toLowerCase(),
-        text: h.textContent?.trim()
-      }))
+      totalQuotes: document.querySelectorAll('.quote').length,
+      authors: Array.from(new Set(
+        Array.from(document.querySelectorAll('.author'))
+          .map(a => a.textContent?.trim())
+      )),
+      allTags: Array.from(new Set(
+        Array.from(document.querySelectorAll('.tag'))
+          .map(t => t.textContent?.trim())
+      )),
+      hasNextPage: document.querySelector('.next') !== null
     }
   }
 )
 
 await harvester.close()
-console.log(pageInfo)
+console.log(pageData)
 ```
 
 ## Configuration Options

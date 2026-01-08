@@ -39,17 +39,19 @@ features:
 ```javascript
 import { harvest } from 'domharvest-playwright'
 
-// Extract all article titles from a page
-const titles = await harvest(
-  'https://example.com',
-  'article h2',
+// Extract quotes from quotes.toscrape.com (a site designed for scraping practice)
+const quotes = await harvest(
+  'https://quotes.toscrape.com/',
+  '.quote',
   (el) => ({
-    title: el.textContent?.trim(),
-    link: el.querySelector('a')?.href
+    text: el.querySelector('.text')?.textContent?.trim(),
+    author: el.querySelector('.author')?.textContent?.trim(),
+    tags: Array.from(el.querySelectorAll('.tag')).map(tag => tag.textContent?.trim())
   })
 )
 
-console.log(titles)
+console.log(quotes)
+// Output: Array of 10 quotes with authors and tags
 ```
 
 ## Why DOMHarvest?
