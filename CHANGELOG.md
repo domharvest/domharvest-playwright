@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.1](https://github.com/domharvest/domharvest-playwright/compare/v1.2.0...v1.2.1) (2026-01-08)
+
+
+### Features
+
+* add automated GitHub Release creation on tag push ([b922884](https://github.com/domharvest/domharvest-playwright/commit/b9228848c5d19cfb65350169038e9acab0fc169c))
+
+
+### Documentation
+
+* update examples with realistic scraping practice sites ([a5f2e66](https://github.com/domharvest/domharvest-playwright/commit/a5f2e66dd763f5abca7272dee04a82cc188c75bc))
+
 ## 1.2.0 (2026-01-07)
 
 
