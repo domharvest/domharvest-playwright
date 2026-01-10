@@ -4,7 +4,16 @@ export default defineConfig({
   title: 'DOMHarvest Playwright',
   description: 'A powerful DOM harvesting tool built with Playwright',
   base: '/domharvest-playwright/',
-
+  head: [
+    [
+      'script',
+      {
+        'data-goatcounter': 'https://domharvest.goatcounter.com/count',
+        'async': '',
+        'src': '//gc.zgo.at/count.js'
+      }
+    ]
+  ],
   themeConfig: {
     logo: '/logo.svg',
 
