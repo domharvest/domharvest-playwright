@@ -5,6 +5,9 @@ hero:
   name: DOMHarvest
   text: Playwright-powered web scraping
   tagline: Extract DOM elements with precision and speed
+  image:
+    src: /DomHarvest_Logo.png
+    alt: DOMHarvest Logo
   actions:
     - theme: brand
       text: Get Started

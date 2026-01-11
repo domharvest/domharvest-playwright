@@ -1,4 +1,12 @@
 import { defineConfig } from 'vitepress'
+import { readFileSync } from 'fs'
+import { fileURLToPath } from 'url'
+import { dirname, resolve } from 'path'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const packageJson = JSON.parse(
+  readFileSync(resolve(__dirname, '../../package.json'), 'utf-8')
+)
 
 export default defineConfig({
   title: 'DOMHarvest Playwright',
@@ -20,6 +28,10 @@ export default defineConfig({
     nav: [
       { text: 'Guide', link: '/guide/getting-started' },
       { text: 'API Reference', link: '/api/harvester' },
+      {
+        text: `v${packageJson.version}`,
+        link: 'https://github.com/domharvest/domharvest-playwright/releases'
+      },
       { text: 'GitHub', link: 'https://github.com/domharvest/domharvest-playwright' }
     ],
 

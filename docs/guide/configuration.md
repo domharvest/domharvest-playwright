@@ -39,9 +39,245 @@ const harvester = new DOMHarvester({ headless: false })
 const harvester = new DOMHarvester({ timeout: 60000 }) // 60 seconds
 ```
 
+## Advanced Configuration
+
+### Logging
+
+Configure structured logging with different levels:
+
+```javascript
+const harvester = new DOMHarvester({
+  logging: {
+    level: 'info', // 'debug', 'info', 'warn', 'error'
+    logger: customLogger // Optional: Winston, Pino, etc.
+  }
+})
+```
+
+**Custom Logger Example:**
+```javascript
+import winston from 'winston'
+
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.json(),
+  transports: [new winston.transports.File({ filename: 'scraping.log' })]
+})
+
+const harvester = new DOMHarvester({
+  logging: {
+    level: 'debug',
+    logger
+  }
+})
+```
+
+### Rate Limiting
+
+Built-in rate limiting to avoid overwhelming servers:
+
+```javascript
+// Global rate limit
+const harvester = new DOMHarvester({
+  rateLimit: {
+    requests: 10,
+    per: 60000 // 10 requests per minute
+  }
+})
+
+// Per-domain rate limiting
+const harvester = new DOMHarvester({
+  rateLimit: {
+    global: { requests: 20, per: 60000 },
+    perDomain: { requests: 5, per: 60000 }
+  }
+})
+```
+
+### Retry Logic
+
+Automatic retries with exponential or linear backoff:
+
+```javascript
+const data = await harvester.harvest(
+  'https://example.com',
+  '.content',
+  null,
+  {
+    retries: 3,
+    backoff: 'exponential', // or 'linear'
+    maxBackoff: 10000,
+    retryOn: ['TimeoutError', 'NavigationError'] // Only retry these errors
+  }
+)
+```
+
+### Error Handling
+
+Centralized error handling with callbacks:
+
+```javascript
+const harvester = new DOMHarvester({
+  onError: (error, context) => {
+    console.error(`Error on ${context.url}:`, error.message)
+    // Log to external service, send alert, etc.
+  }
+})
+```
+
+### Proxy Configuration
+
+Route requests through a proxy server:
+
+```javascript
+const harvester = new DOMHarvester({
+  proxy: {
+    server: 'http://proxy.example.com:8080',
+    username: 'user',
+    password: 'pass'
+  }
+})
+```
+
+### Browser Context Options
+
+Customize the browser environment:
+
+```javascript
+const harvester = new DOMHarvester({
+  // Viewport
+  viewport: {
+    width: 1920,
+    height: 1080
+  },
+
+  // User Agent
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+
+  // Custom Headers
+  extraHTTPHeaders: {
+    'Accept-Language': 'en-US,en;q=0.9',
+    'X-Custom-Header': 'value'
+  },
+
+  // Cookies
+  cookies: [
+    {
+      name: 'session_id',
+      value: 'abc123',
+      domain: '.example.com',
+      path: '/',
+      httpOnly: true,
+      secure: true
+    }
+  ],
+
+  // Geolocation
+  geolocation: {
+    latitude: 40.7128,
+    longitude: -74.0060,
+    accuracy: 100
+  },
+
+  // Timezone & Locale
+  timezoneId: 'America/New_York',
+  locale: 'en-US',
+
+  // JavaScript toggle
+  javaScriptEnabled: true // Set to false for static content
+})
+```
+
+### Screenshots
+
+Capture screenshots during or after scraping:
+
+```javascript
+// Screenshot during harvest
+const data = await harvester.harvest(
+  'https://example.com',
+  '.content',
+  null,
+  {
+    screenshot: {
+      path: './screenshots/page.png',
+      fullPage: true
+    }
+  }
+)
+
+// Standalone screenshot
+const buffer = await harvester.screenshot(
+  'https://example.com',
+  { type: 'png', fullPage: true }
+)
+```
+
+### Wait Strategies
+
+Fine-tune when operations should proceed:
+
+```javascript
+const data = await harvester.harvest(
+  'https://example.com',
+  '.dynamic-content',
+  null,
+  {
+    // Wait for network to be idle
+    waitForLoadState: 'networkidle', // 'load', 'domcontentloaded', 'networkidle'
+
+    // Custom selector wait
+    waitForSelector: {
+      state: 'visible', // 'attached', 'detached', 'visible', 'hidden'
+      timeout: 10000
+    }
+  }
+)
+```
+
+## Production Configuration Example
+
+Complete production-ready setup:
+
+```javascript
+import { DOMHarvester } from 'domharvest-playwright'
+
+const harvester = new DOMHarvester({
+  headless: true,
+  timeout: 30000,
+
+  // Rate limiting
+  rateLimit: {
+    global: { requests: 20, per: 60000 },
+    perDomain: { requests: 5, per: 60000 }
+  },
+
+  // Logging
+  logging: {
+    level: 'info',
+    logger: productionLogger
+  },
+
+  // Error handling
+  onError: (error, context) => {
+    errorTracker.log(error, context)
+  },
+
+  // Proxy
+  proxy: {
+    server: process.env.PROXY_SERVER
+  },
+
+  // Browser context
+  viewport: { width: 1920, height: 1080 },
+  userAgent: 'Mozilla/5.0 (compatible; MyBot/1.0)',
+  locale: 'en-US'
+})
+```
+
 ## Browser Configuration
 
-DOMHarvest uses Playwright's Chromium browser by default. The browser configuration is handled automatically, but you can access Playwright's full API when needed.
+DOMHarvest uses Playwright's Chromium browser by default. The browser configuration is handled automatically through the options above.
 
 ## Environment Variables
 
@@ -103,54 +339,6 @@ try {
 }
 ```
 
-### Rate Limiting
-
-Add delays between requests to avoid overwhelming servers:
-
-```javascript
-async function scrapeWithDelay (urls) {
-  const harvester = new DOMHarvester()
-  await harvester.init()
-
-  const results = []
-
-  try {
-    for (const url of urls) {
-      const data = await harvester.harvest(url, '.content', el => ({
-        text: el.textContent
-      }))
-      results.push(data)
-
-      // Wait 2 seconds between requests
-      await new Promise(resolve => setTimeout(resolve, 2000))
-    }
-  } finally {
-    await harvester.close()
-  }
-
-  return results
-}
-```
-
-## Advanced: Custom Browser Context
-
-While DOMHarvest manages the browser for you, you can access Playwright's context API if needed. The context is available via `harvester.context`:
-
-```javascript
-const harvester = new DOMHarvester()
-await harvester.init()
-
-// Access the underlying Playwright context
-const context = harvester.context
-
-// Example: Set custom viewport
-await context.setViewportSize({ width: 1920, height: 1080 })
-
-// Example: Set user agent
-await context.setExtraHTTPHeaders({
-  'User-Agent': 'Custom User Agent'
-})
-```
 
 ## Next Steps
 
