@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.2](https://github.com/domharvest/domharvest-playwright/compare/v1.2.1...v1.2.2) (2026-01-11)
+
+
+### Features
+
+* add advanced browser configuration and screenshot capabilities ([6c415f4](https://github.com/domharvest/domharvest-playwright/commit/6c415f475a18cbf0d99094c45026aa2a3f46399e))
+
+
+### Documentation
+
+* add GoatCounter analytics to documentation site ([59df7c3](https://github.com/domharvest/domharvest-playwright/commit/59df7c319de74b3e8852a6d114edc01a8b404e22))
+
 ### [1.2.1](https://github.com/domharvest/domharvest-playwright/compare/v1.2.0...v1.2.1) (2026-01-08)
 
 
