@@ -36,6 +36,11 @@ Roadmap completa per il miglioramento del progetto, organizzata per priorità e 
 
 ## 🔥 P1 - Priorità Alta
 
+### Github README Badge
+- [ ] DEV Blog
+- [ ] Github Action CI
+- [ ] Upwork Job
+
 ### Single Page Applications (SPA)
 - [ ] Implementare smart waiting per contenuti caricati dinamicamente
 - [ ] Aggiungere supporto per network idle detection
