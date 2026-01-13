@@ -2,12 +2,38 @@
 
 Practical examples for common web scraping scenarios using real practice websites.
 
+::: tip
+These examples show both **DSL** (declarative) and **function-based** (imperative) approaches. DSL is recommended for cleaner, more maintainable code. See the [DSL Guide](/guide/dsl) for more details.
+:::
+
 ## Extract Quotes with Authors and Tags
+
+### Using DSL (Recommended)
+
+```javascript
+import { harvest, text, array } from 'domharvest-playwright'
+
+// Extract quotes from quotes.toscrape.com (a site designed for scraping practice)
+const quotes = await harvest(
+  'https://quotes.toscrape.com/',
+  '.quote',
+  {
+    text: text('.text'),
+    author: text('.author'),
+    tags: array('.tag', text())
+  }
+)
+
+console.log(quotes)
+// Output: Array of 10 quotes with authors and tags
+```
+
+### Using Function Extractor
 
 ```javascript
 import { harvest } from 'domharvest-playwright'
 
-// Extract quotes from quotes.toscrape.com (a site designed for scraping practice)
+// Traditional function-based approach
 const quotes = await harvest(
   'https://quotes.toscrape.com/',
   '.quote',
@@ -19,10 +45,37 @@ const quotes = await harvest(
 )
 
 console.log(quotes)
-// Output: Array of 10 quotes with authors and tags
 ```
 
 ## Scrape Book Information
+
+### Using DSL (Recommended)
+
+```javascript
+import { DOMHarvester, text, attr } from 'domharvest-playwright'
+
+const harvester = new DOMHarvester({ headless: true })
+await harvester.init()
+
+const books = await harvester.harvest(
+  'https://books.toscrape.com/',
+  '.product_pod',
+  {
+    title: attr('h3 a', 'title'),
+    price: text('.price_color'),
+    availability: text('.availability'),
+    image: attr('img', 'src'),
+    // Mixed mode - custom function for complex extraction
+    rating: (el) => el.querySelector('.star-rating')?.className.split(' ')[1]
+  }
+)
+
+await harvester.close()
+console.log(books)
+// Output: Array of 20 books with details
+```
+
+### Using Function Extractor
 
 ```javascript
 import { DOMHarvester } from 'domharvest-playwright'
@@ -44,7 +97,6 @@ const books = await harvester.harvest(
 
 await harvester.close()
 console.log(books)
-// Output: Array of 20 books with details
 ```
 
 ## Extract Page Metadata

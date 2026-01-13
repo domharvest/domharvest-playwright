@@ -53,6 +53,7 @@ export default defineConfig({
           text: 'Usage',
           items: [
             { text: 'Quick Start', link: '/guide/quick-start' },
+            { text: 'Declarative DSL', link: '/guide/dsl' },
             { text: 'Examples', link: '/guide/examples' },
             { text: 'Configuration', link: '/guide/configuration' },
             { text: 'Testing & Quality', link: '/guide/testing' }
@@ -64,6 +65,7 @@ export default defineConfig({
           text: 'API Reference',
           items: [
             { text: 'DOMHarvester', link: '/api/harvester' },
+            { text: 'DSL Helpers', link: '/api/dsl' },
             { text: 'Helper Functions', link: '/api/helpers' }
           ]
         }
