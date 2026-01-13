@@ -1,4 +1,5 @@
 import { chromium } from 'playwright'
+import { createExtractor, generateDSLCode, generateMixedModeCode } from './dsl.js'
 
 /**
  * Custom error class for timeout errors during harvesting operations
@@ -516,12 +517,37 @@ export class DOMHarvester {
       try {
         let results
         if (extractor) {
-          // Use custom extractor function
-          results = await page.$$eval(selector, (elements, extractorFn) => {
-            // eslint-disable-next-line no-new-func
-            const fn = new Function('return ' + extractorFn)()
-            return elements.map(el => fn(el))
-          }, extractor.toString())
+          // Convert DSL to extractor function if needed
+          const extractorFn = createExtractor(extractor)
+
+          // Check if it's a DSL schema (special handling needed)
+          if (extractorFn && typeof extractorFn === 'object' && extractorFn.__isDSLSchema) {
+            // Check for mixed mode (DSL + custom functions)
+            if (extractorFn.__isMixedMode) {
+              // Generate mixed mode code inline
+              const mixedModeCode = generateMixedModeCode(extractorFn.schema)
+              results = await page.$$eval(selector, (elements, mixedModeCodeStr) => {
+                // eslint-disable-next-line no-new-func
+                const fn = new Function('return ' + mixedModeCodeStr)()
+                return elements.map(el => fn(el))
+              }, mixedModeCode)
+            } else {
+              // Pure DSL: generate DSL code inline
+              const dslCode = generateDSLCode(extractorFn.schema)
+              results = await page.$$eval(selector, (elements, dslCodeStr) => {
+                // eslint-disable-next-line no-new-func
+                const fn = new Function('return ' + dslCodeStr)()
+                return elements.map(el => fn(el))
+              }, dslCode)
+            }
+          } else {
+            // Use custom extractor function (backward compatibility)
+            results = await page.$$eval(selector, (elements, extractorFnStr) => {
+              // eslint-disable-next-line no-new-func
+              const fn = new Function('return ' + extractorFnStr)()
+              return elements.map(el => fn(el))
+            }, extractorFn.toString())
+          }
         } else {
           // Use default extraction
           results = await page.$$eval(selector, (elements) => {
@@ -829,3 +855,6 @@ export async function harvest (url, selector, extractor = null, options = {}) {
     await harvester.close()
   }
 }
+
+// Re-export DSL helper functions for convenience
+export { text, attr, array, exists, html, count } from './dsl.js'
