@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { DOMHarvester, TimeoutError, NavigationError, ExtractionError } from '../src/harvester.js'
+import { DOMHarvester, TimeoutError, NavigationError, ExtractionError, harvest } from '../src/harvester.js'
 
 // Mock data for testing
 const MOCK_URL = 'https://quotes.toscrape.com/'
@@ -482,5 +482,92 @@ test('DOMHarvester - screenshot', async (t) => {
     } finally {
       await harvester.close()
     }
+  })
+
+  await t.test('should support waitForSelector in screenshot', async () => {
+    const harvester = new DOMHarvester({ headless: true })
+    await harvester.init()
+
+    try {
+      const screenshot = await harvester.screenshot(
+        MOCK_URL,
+        { type: 'png' },
+        { waitForSelector: MOCK_SELECTOR }
+      )
+      assert.ok(screenshot instanceof Buffer, 'Should return screenshot buffer')
+      assert.ok(screenshot.length > 0, 'Screenshot should have content')
+    } finally {
+      await harvester.close()
+    }
+  })
+
+  await t.test('should handle screenshot errors gracefully', async () => {
+    const harvester = new DOMHarvester({ headless: true, timeout: 1000 })
+    await harvester.init()
+
+    try {
+      await harvester.screenshot('http://invalid-url.test')
+      assert.fail('Should have thrown an error')
+    } catch (err) {
+      assert.ok(err instanceof NavigationError, 'Should throw NavigationError')
+      assert.ok(err.message.includes('screenshot'), 'Error should mention screenshot')
+    } finally {
+      await harvester.close()
+    }
+  })
+})
+
+test('DOMHarvester - harvestCustom retry exhaustion', async (t) => {
+  await t.test('should exhaust retries and throw error', async () => {
+    const harvester = new DOMHarvester({ headless: true, timeout: 1000 })
+    await harvester.init()
+
+    try {
+      await harvester.harvestCustom(
+        'http://invalid-url-that-does-not-exist.test',
+        () => ({ data: 'test' }),
+        { retries: 2, backoff: 'exponential' }
+      )
+      assert.fail('Should have thrown an error')
+    } catch (err) {
+      assert.ok(err instanceof NavigationError, 'Should throw NavigationError')
+    } finally {
+      await harvester.close()
+    }
+  })
+})
+
+test('Standalone harvest helper', async (t) => {
+  await t.test('should work without manual init/close', async () => {
+    const quotes = await harvest(
+      MOCK_URL,
+      MOCK_SELECTOR,
+      (el) => ({
+        text: el.querySelector('.text')?.textContent,
+        author: el.querySelector('.author')?.textContent
+      }),
+      { headless: true }
+    )
+
+    assert.ok(Array.isArray(quotes), 'Should return an array')
+    assert.ok(quotes.length > 0, 'Should extract quotes')
+    assert.ok(quotes[0].text, 'Should have text')
+    assert.ok(quotes[0].author, 'Should have author')
+  })
+
+  await t.test('should pass retry options correctly', async () => {
+    const results = await harvest(
+      MOCK_URL,
+      MOCK_SELECTOR,
+      null,
+      {
+        headless: true,
+        retries: 1,
+        backoff: 'linear'
+      }
+    )
+
+    assert.ok(Array.isArray(results), 'Should return an array')
+    assert.ok(results.length > 0, 'Should extract data')
   })
 })

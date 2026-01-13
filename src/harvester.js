@@ -1,7 +1,12 @@
 import { chromium } from 'playwright'
 
 /**
- * Custom error class for timeout errors
+ * Custom error class for timeout errors during harvesting operations
+ * @extends Error
+ * @property {string} url - The URL where the timeout occurred
+ * @property {string} selector - The selector being waited for
+ * @property {string} operation - The operation that timed out
+ * @property {Error} cause - The underlying error that caused the timeout
  */
 export class TimeoutError extends Error {
   constructor (message, context = {}) {
@@ -15,7 +20,11 @@ export class TimeoutError extends Error {
 }
 
 /**
- * Custom error class for navigation errors
+ * Custom error class for navigation errors during page loading
+ * @extends Error
+ * @property {string} url - The URL that failed to load
+ * @property {string} operation - The operation that failed
+ * @property {Error} cause - The underlying error
  */
 export class NavigationError extends Error {
   constructor (message, context = {}) {
@@ -28,7 +37,12 @@ export class NavigationError extends Error {
 }
 
 /**
- * Custom error class for extraction errors
+ * Custom error class for data extraction errors
+ * @extends Error
+ * @property {string} url - The URL where extraction failed
+ * @property {string} selector - The selector used for extraction
+ * @property {string} operation - The extraction operation that failed
+ * @property {Error} cause - The underlying error
  */
 export class ExtractionError extends Error {
   constructor (message, context = {}) {
@@ -161,7 +175,33 @@ class RateLimiter {
 }
 
 /**
- * DOMHarvester - A simple DOM harvesting tool using Playwright
+ * DOMHarvester - A powerful DOM harvesting tool built on Playwright
+ *
+ * @class
+ * @example
+ * const harvester = new DOMHarvester({ headless: true, timeout: 30000 })
+ * await harvester.init()
+ * const data = await harvester.harvest('https://example.com', '.item', (el) => ({
+ *   title: el.querySelector('h2')?.textContent,
+ *   link: el.querySelector('a')?.href
+ * }))
+ * await harvester.close()
+ *
+ * @param {Object} options - Configuration options
+ * @param {boolean} [options.headless=true] - Run browser in headless mode
+ * @param {number} [options.timeout=30000] - Default timeout in milliseconds
+ * @param {Object} [options.viewport] - Browser viewport size {width, height}
+ * @param {string} [options.userAgent] - Custom user agent string
+ * @param {Object} [options.proxy] - Proxy configuration {server, username, password}
+ * @param {Array<Object>} [options.cookies] - Cookies to set in browser context
+ * @param {Object} [options.extraHTTPHeaders] - Additional HTTP headers
+ * @param {Object} [options.logging] - Logging configuration {level, logger}
+ * @param {Object} [options.rateLimit] - Rate limiting configuration {requests, per}
+ * @param {Function} [options.onError] - Error callback function
+ * @param {Object} [options.geolocation] - Geolocation {latitude, longitude, accuracy}
+ * @param {string} [options.timezoneId] - Timezone identifier
+ * @param {string} [options.locale] - Locale identifier
+ * @param {boolean} [options.javaScriptEnabled] - Enable/disable JavaScript
  */
 export class DOMHarvester {
   constructor (options = {}) {
@@ -233,7 +273,15 @@ export class DOMHarvester {
   }
 
   /**
-   * Initialize the browser
+   * Initialize the browser and context
+   * Must be called before any harvesting operations
+   *
+   * @async
+   * @returns {Promise<void>}
+   * @throws {NavigationError} If browser initialization fails
+   * @example
+   * const harvester = new DOMHarvester()
+   * await harvester.init()
    */
   async init () {
     try {
@@ -299,7 +347,13 @@ export class DOMHarvester {
   }
 
   /**
-   * Close the browser
+   * Close the browser and clean up resources
+   * Should be called when done with harvesting
+   *
+   * @async
+   * @returns {Promise<void>}
+   * @example
+   * await harvester.close()
    */
   async close () {
     if (this.context) await this.context.close()
@@ -307,12 +361,38 @@ export class DOMHarvester {
   }
 
   /**
-   * Navigate to a URL and extract data using a selector
+   * Navigate to a URL and extract data using a CSS selector
+   *
+   * @async
    * @param {string} url - The URL to visit
    * @param {string} selector - CSS selector for elements to extract
-   * @param {Function} extractor - Optional function to extract data from elements
-   * @param {Object} options - Operation options (retries, backoff, etc.)
-   * @returns {Promise<Array>} Array of extracted data
+   * @param {Function|null} [extractor=null] - Function to extract data from each element. If null, uses default extractor
+   * @param {Object} [options={}] - Operation options
+   * @param {number} [options.retries=0] - Number of retry attempts on failure
+   * @param {string} [options.backoff='exponential'] - Backoff strategy ('exponential' or 'linear')
+   * @param {number} [options.maxBackoff=10000] - Maximum backoff delay in ms
+   * @param {Array<string>} [options.retryOn] - Error types to retry on (null = retry all)
+   * @param {string} [options.waitForLoadState='domcontentloaded'] - Page load state to wait for
+   * @param {Object} [options.waitForSelector] - Selector wait options {state, timeout}
+   * @param {Object} [options.screenshot] - Screenshot options {path, fullPage, type}
+   * @returns {Promise<Array>} Array of extracted data objects
+   * @throws {NavigationError} If page navigation fails
+   * @throws {TimeoutError} If operation times out
+   * @throws {ExtractionError} If data extraction fails
+   * @example
+   * // Basic usage with custom extractor
+   * const data = await harvester.harvest('https://example.com', '.product', (el) => ({
+   *   name: el.querySelector('h2')?.textContent,
+   *   price: el.querySelector('.price')?.textContent
+   * }))
+   *
+   * @example
+   * // With retry logic
+   * const data = await harvester.harvest('https://example.com', '.item', null, {
+   *   retries: 3,
+   *   backoff: 'exponential',
+   *   retryOn: ['TimeoutError', 'NavigationError']
+   * })
    */
   async harvest (url, selector, extractor = null, options = {}) {
     const {
@@ -467,11 +547,27 @@ export class DOMHarvester {
   }
 
   /**
-   * Navigate to a URL and execute custom extraction logic
+   * Navigate to a URL and execute custom JavaScript in the page context
+   *
+   * @async
    * @param {string} url - The URL to visit
-   * @param {Function} pageFunction - Function to execute in page context
-   * @param {Object} options - Operation options (retries, backoff, etc.)
-   * @returns {Promise<*>} Result of the page function
+   * @param {Function} pageFunction - Function to execute in the browser page context
+   * @param {Object} [options={}] - Operation options
+   * @param {number} [options.retries=0] - Number of retry attempts
+   * @param {string} [options.backoff='exponential'] - Backoff strategy
+   * @param {number} [options.maxBackoff=10000] - Maximum backoff delay
+   * @param {Array<string>} [options.retryOn] - Error types to retry on
+   * @param {string} [options.waitForLoadState='domcontentloaded'] - Page load state
+   * @param {Object} [options.screenshot] - Screenshot options
+   * @returns {Promise<*>} Result returned by the pageFunction
+   * @throws {NavigationError} If page navigation fails
+   * @example
+   * const result = await harvester.harvestCustom('https://example.com', () => {
+   *   return {
+   *     title: document.title,
+   *     links: Array.from(document.querySelectorAll('a')).map(a => a.href)
+   *   }
+   * })
    */
   async harvestCustom (url, pageFunction, options = {}) {
     const {
@@ -557,11 +653,29 @@ export class DOMHarvester {
   }
 
   /**
-   * Take a screenshot of a page
+   * Capture a screenshot of a page
+   *
+   * @async
    * @param {string} url - The URL to visit
-   * @param {Object} screenshotOptions - Screenshot options (path, fullPage, etc.)
-   * @param {Object} options - Navigation options
-   * @returns {Promise<Buffer>} Screenshot buffer
+   * @param {Object} [screenshotOptions={}] - Playwright screenshot options
+   * @param {string} [screenshotOptions.path] - Path to save the screenshot file
+   * @param {boolean} [screenshotOptions.fullPage=false] - Capture full scrollable page
+   * @param {string} [screenshotOptions.type='png'] - Image type: 'png' or 'jpeg'
+   * @param {number} [screenshotOptions.quality] - Image quality (0-100, for jpeg only)
+   * @param {Object} [options={}] - Navigation options
+   * @param {string} [options.waitForLoadState='domcontentloaded'] - Page load state to wait for
+   * @param {string} [options.waitForSelector] - CSS selector to wait for before screenshot
+   * @returns {Promise<Buffer>} Screenshot as a Buffer
+   * @throws {NavigationError} If screenshot capture fails
+   * @example
+   * // Save to file
+   * await harvester.screenshot('https://example.com', { path: './screenshot.png', fullPage: true })
+   *
+   * @example
+   * // Get as buffer and wait for specific element
+   * const buffer = await harvester.screenshot('https://example.com', { type: 'png' }, {
+   *   waitForSelector: '.main-content'
+   * })
    */
   async screenshot (url, screenshotOptions = {}, options = {}) {
     const { waitForLoadState = 'domcontentloaded', waitForSelector = null } = options
@@ -604,9 +718,25 @@ export class DOMHarvester {
 
   /**
    * Harvest multiple URLs in batch with concurrency control
-   * @param {Array<Object>} configs - Array of harvest configurations
-   * @param {Object} options - Batch options (concurrency, onProgress, etc.)
-   * @returns {Promise<Array>} Array of results with success/error status
+   *
+   * @async
+   * @param {Array<Object>} configs - Array of harvest configuration objects
+   * @param {string} configs[].url - URL to harvest
+   * @param {string} configs[].selector - CSS selector for extraction
+   * @param {Function} [configs[].extractor] - Optional extractor function
+   * @param {Object} [configs[].options] - Per-URL harvest options
+   * @param {Object} [options={}] - Batch processing options
+   * @param {number} [options.concurrency=5] - Number of concurrent requests
+   * @param {Function} [options.onProgress] - Progress callback (completed, total)
+   * @returns {Promise<Array<Object>>} Array of result objects with success/error status
+   * @example
+   * const results = await harvester.harvestBatch([
+   *   { url: 'https://example.com/page1', selector: '.item' },
+   *   { url: 'https://example.com/page2', selector: '.product' }
+   * ], {
+   *   concurrency: 3,
+   *   onProgress: (completed, total) => console.log(`${completed}/${total}`)
+   * })
    */
   async harvestBatch (configs, options = {}) {
     const {
@@ -666,12 +796,25 @@ export class DOMHarvester {
 }
 
 /**
- * Convenience function for one-off harvesting
+ * Convenience function for one-off harvesting without manual init/close
+ * Automatically creates, initializes, and closes a DOMHarvester instance
+ *
+ * @async
  * @param {string} url - The URL to visit
  * @param {string} selector - CSS selector for elements to extract
- * @param {Function} extractor - Optional function to extract data from elements
- * @param {Object} options - Harvester and operation options
+ * @param {Function|null} [extractor=null] - Optional extractor function
+ * @param {Object} [options={}] - Combined harvester and operation options
+ * @param {boolean} [options.headless=true] - Run browser in headless mode
+ * @param {number} [options.timeout=30000] - Default timeout
+ * @param {number} [options.retries=0] - Number of retry attempts
+ * @param {string} [options.backoff='exponential'] - Backoff strategy
  * @returns {Promise<Array>} Array of extracted data
+ * @throws {NavigationError|TimeoutError|ExtractionError} Various harvest errors
+ * @example
+ * // Quick one-off harvest without managing lifecycle
+ * const data = await harvest('https://example.com', '.item', (el) => ({
+ *   title: el.querySelector('h2')?.textContent
+ * }), { headless: true, retries: 2 })
  */
 export async function harvest (url, selector, extractor = null, options = {}) {
   // Separate harvester options from operation options

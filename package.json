@@ -28,6 +28,7 @@
   },
   "scripts": {
     "test": "standard && node --test",
+    "test:coverage": "c8 --reporter=text --reporter=lcov --reporter=html node --test",
     "lint": "standard",
     "lint:fix": "standard --fix",
     "playwright:install": "playwright install",
@@ -51,6 +52,7 @@
     "playwright": "^1.57.0"
   },
   "devDependencies": {
+    "c8": "^10.1.3",
     "standard": "^17.1.2",
     "standard-version": "^9.5.0",
     "vitepress": "^1.6.4"
