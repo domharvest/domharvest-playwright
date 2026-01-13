@@ -26,11 +26,11 @@ Roadmap completa per il miglioramento del progetto, organizzata per priorità e 
 - [ ] Esempi per 2-3 siti comuni (LinkedIn, Twitter)
 
 ### Code Quality Foundation
-- [ ] JSDoc completo per tutta la public API
-- [ ] Type checking opzionale con JSDoc + TypeScript checker
-- [ ] Test coverage → 80%+ (attualmente ~70%)
-- [ ] Integration tests per use cases comuni
-- [ ] Property-based testing per edge cases
+- [x] JSDoc completo per tutta la public API
+- [x] Type checking opzionale con JSDoc + TypeScript checker
+- [x] Test coverage → 80%+ (attualmente ~70%)
+- [x] Integration tests per use cases comuni
+- [x] Property-based testing per edge cases
 
 ---
 
