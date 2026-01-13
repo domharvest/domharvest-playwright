@@ -858,3 +858,6 @@ export async function harvest (url, selector, extractor = null, options = {}) {
 
 // Re-export DSL helper functions for convenience
 export { text, attr, array, exists, html, count } from './dsl.js'
+
+// Re-export authentication helpers for convenience
+export { fillLoginForm, saveCookies, loadCookies, SessionManager, login } from './auth.js'
