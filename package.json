@@ -22,7 +22,7 @@
   "bugs": {
     "url": "https://github.com/domharvest/domharvest-playwright/issues"
   },
-  "homepage": "https://domharvest.github.io/domharvest-playwright/",
+  "homepage": "https://domharvest.dev",
   "engines": {
     "node": ">=18.0.0"
   },
@@ -46,7 +46,7 @@
     "dom",
     "harvest"
   ],
-  "author": "Massimiliano Bertinetti <max.yterb@gmail.com>",
+  "author": "Max Bertinetti <max.yterb@gmail.com>",
   "license": "MIT",
   "dependencies": {
     "playwright": "^1.57.0"

@@ -7,7 +7,7 @@
 
 A powerful DOM harvesting tool built with Playwright for extracting and analyzing web content.
 
-📚 **[Documentation](https://domharvest.github.io/domharvest-playwright/)** | 🚀 **[Quick Start](https://domharvest.github.io/domharvest-playwright/guide/quick-start)** | 📖 **[API Reference](https://domharvest.github.io/domharvest-playwright/api/harvester)**
+📚 **[Documentation](https://domharvest.dev/domharvest-playwright/)** | 🚀 **[Quick Start](https://domharvest.dev/domharvest-playwright/guide/quick-start)** | 📖 **[API Reference](https://domharvest.dev/domharvest-playwright/api/harvester)**
 
 ## Features
 

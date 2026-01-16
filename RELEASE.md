@@ -76,7 +76,7 @@ After a few minutes, verify:
 
 1. **GitHub Release**: Check https://github.com/domharvest/domharvest-playwright/releases
 2. **npm Package**: Check https://www.npmjs.com/package/domharvest-playwright
-3. **Documentation**: Check https://domharvest.github.io/domharvest-playwright/
+3. **Documentation**: Check https://domharvest.dev
 
 ## Conventional Commits
 
